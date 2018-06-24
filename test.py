@@ -3,6 +3,8 @@ import socket, ssl
 
 HOST = 'nefro.tk'
 PORT = 6666
+nick = "Admin"
+password = "hello there"
 
 
 def recv_all(sock, crlf):
@@ -31,38 +33,38 @@ if not cert or ssl.match_hostname(cert, HOST):
 
 # LOGIN:nick@haslo - login/register user with name nick
 def command_login(login, password):
-    return ''.join(["LOGIN:", login, "@", password, '\0'])
+    return ''.join(["LOGIN:", login, "@", password])
 
 
 # JOIN:room_name - join room
 def command_join(your_nick, room_name):
     print "my roomname : " + room_name
-    return ''.join(["JOIN:", your_nick, "@", room_name, '\0'])
+    return ''.join(["JOIN:", your_nick, "@", room_name])
 
 
 # KICK:yournick:nick - disconnect user with name nick
 def command_kick(your_nick, kick_nick):
-    return ''.join(["KICK:", your_nick, ":", kick_nick, '\0'])
+    return ''.join(["KICK:", your_nick, ":", kick_nick])
 
 
 # BAN:yournick:nick - disconnect and pernamently ban usr with name nick
 def command_ban(your_nick, ban_nick):
-    return ''.join(["BAN:", your_nick, ":", ban_nick, '\0'])
+    return ''.join(["BAN:", your_nick, ":", ban_nick])
 
 
 # CREATE:yournick:room_name - create room with name room_name
 def command_create(your_nick, new_room_name):
-    return ''.join(["CREATE:", your_nick, ":", new_room_name, '\0'])
+    return ''.join(["CREATE:", your_nick, ":", new_room_name])
 
 
 # DELETE:yournick:room_name - delete room with name room_name
 def command_delete(your_nick, room_to_delete):
-    return ''.join(["CREATE:", your_nick, ":", room_to_delete, '\0'])
+    return ''.join(["DELETE:", your_nick, ":", room_to_delete])
 
 
 # ME:yournick - get info about yourself
 def command_me(your_nick):
-    return ''.join(["ME:", your_nick, '\0'])
+    return ''.join(["ME:", your_nick])
 
 
 # LIST - get rooms list
@@ -93,6 +95,14 @@ def insert_message(input_command):
                 result = ''.join(command_create(nick, command[1]))
             elif command[0] == '/delete':
                 result = ''.join(command_delete(nick, command[1]))
+            elif command[0] == '/login':
+                command = input_command.split(" ")
+                nick = command[1]
+                print nick
+                password = command[2]
+                print password
+                result = ''.join(command_login(nick, password))
+                print result
             else:
                 result = None
         else:
