@@ -24,50 +24,50 @@ def log_in(login,password):
 
 	# Functions command returns command string in expected format
 
-	# LOGIN:nick@haslo - login/register user with name nick
-	def command_login(login, password):
+# LOGIN:nick@haslo - login/register user with name nick
+def command_login(login, password):
 	    return ''.join(["LOGIN:", login, "@", password])
 
 
-	# JOIN:room_name - join room
-	def command_join(your_nick, room_name):
-	    print "my roomname : " + room_name
-	    return ''.join(["JOIN:", your_nick, "@", room_name])
+# JOIN:room_name - join room
+def command_join(your_nick, room_name):
+	print "my roomname : " + room_name
+	return ''.join(["JOIN:", your_nick, "@", room_name])
 
 
-	# KICK:yournick:nick - disconnect user with name nick
-	def command_kick(your_nick, kick_nick):
-	    return ''.join(["KICK:", your_nick, ":", kick_nick])
+# KICK:yournick:nick - disconnect user with name nick
+def command_kick(your_nick, kick_nick):
+	return ''.join(["KICK:", your_nick, ":", kick_nick])
 
 
-	# BAN:yournick:nick - disconnect and pernamently ban usr with name nick
-	def command_ban(your_nick, ban_nick):
-	    return ''.join(["BAN:", your_nick, ":", ban_nick])
+# BAN:yournick:nick - disconnect and pernamently ban usr with name nick
+def command_ban(your_nick, ban_nick):
+    return ''.join(["BAN:", your_nick, ":", ban_nick])
 
 
-	# CREATE:yournick:room_name - create room with name room_name
-	def command_create(your_nick, new_room_name):
-	    return ''.join(["CREATE:", your_nick, ":", new_room_name])
+# CREATE:yournick:room_name - create room with name room_name
+def command_create(your_nick, new_room_name):
+    return ''.join(["CREATE:", your_nick, ":", new_room_name])
 
 
-	# DELETE:yournick:room_name - delete room with name room_name
-	def command_delete(your_nick, room_to_delete):
-	    return ''.join(["DELETE:", your_nick, ":", room_to_delete])
+# DELETE:yournick:room_name - delete room with name room_name
+def command_delete(your_nick, room_to_delete):
+	return ''.join(["DELETE:", your_nick, ":", room_to_delete])
 
 
-	# ME:yournick - get info about yourself
-	def command_me(your_nick):
-	    return ''.join(["ME:", your_nick])
+# ME:yournick - get info about yourself
+def command_me(your_nick):
+	return ''.join(["ME:", your_nick])
 
 
-	# LIST - get rooms list
-	def command_list():
-	    return ''.join(["LIST:", '\0'])
+# LIST - get rooms list
+def command_list():
+	return ''.join(["LIST:", '\0'])
 
 
-	# MSG:yournick@message - send message in courent room
-	def command_message(your_nick, message):
-	    return ''.join(["MSG:", your_nick, "@", message, '\0'])
+# MSG:yournick@message - send message in courent room
+def command_message(your_nick, message):
+	return ''.join(["MSG:", your_nick, "@", message, '\0'])
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect((HOST, PORT))
