@@ -30,7 +30,7 @@ def command_join(your_nick, room_name):
 
 # KICK:yournick:nick - disconnect user with name nick
 def command_kick(your_nick, kick_nick):
-    return ''.join(["KICK:", your_nick, ":", kick_nick])
+    return ''.join(["KICK:", your_nick, "@", kick_nick])
 
 
 # BAN:yournick:nick - disconnect and pernamently ban usr with name nick
@@ -40,12 +40,12 @@ def command_ban(your_nick, ban_nick):
 
 # CREATE:yournick:room_name - create room with name room_name
 def command_create(your_nick, new_room_name):
-    return ''.join(["CREATE:", your_nick, ":", new_room_name])
+    return ''.join(["CREATE:", your_nick, "@", new_room_name])
 
 
 # DELETE:yournick:room_name - delete room with name room_name
 def command_delete(your_nick, room_to_delete):
-    return ''.join(["DELETE:", your_nick, ":", room_to_delete])
+    return ''.join(["DELETE:", your_nick, "@", room_to_delete])
 
 
 # ME:yournick - get info about yourself
@@ -61,6 +61,11 @@ def command_list():
 # MSG:yournick@message - send message in courent room
 def command_message(your_nick, message):
     return ''.join(["MSG:", your_nick, "@", message, '\0'])
+
+
+# USERS: - get all users
+def command_users():
+    return ''.join(["USERS:"])
 
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -97,8 +102,15 @@ def log_in(login, password):
         global nick
         nick = login
         mGui.destroy()
+        secure_sock.send(command_list())
+        response_data = recv_all(secure_sock, "\r\n")
+        print response_data[5:-4]
+        global roomlist
+        roomlist = response_data[5:-4].replace('\'', '').replace(' ', '').split(',')
+        print roomlist
     else:
         quit()
+
 
 button_login = tk.Button(text="Log in", command=lambda: log_in(input_login.get(), input_password.get())).grid(row=2,
                                                                                                               column=0,
@@ -120,11 +132,13 @@ def insert_message(input_command):
             elif command[0] == '/message':
                 result = ''.join(command_message(nick, command[1]))
             elif command[0] == '/kick':
-                result = ''.join(command_ban(nick, command[1]))
+                result = ''.join(command_kick(nick, command[1]))
             elif command[0] == '/ban':
-                result = ''.join(command_create(nick, command[1]))
+                result = ''.join(command_ban(nick, command[1]))
             elif command[0] == '/delete':
                 result = ''.join(command_delete(nick, command[1]))
+            elif command[0] == '/create':
+                result = ''.join(command_create(nick, command[1]))
             elif command[0] == '/login':
                 command = input_command.split(" ")
                 nick = command[1]
@@ -141,6 +155,8 @@ def insert_message(input_command):
                 result = ''.join(command_me(nick))
             elif command[0] == '/list':
                 result = ''.join(command_list())
+            elif command[0] == '/users':
+                result = ''.join(command_users())
             else:
                 result = None
 
@@ -189,9 +205,8 @@ commantLine.focus()
 button = tk.Button(root, text="push command", width=25, command=lambda: insert_message(commantLine.get()))
 button.pack()
 
-listbox.insert(tk.END, "a list entry")
-
 for item in roomlist:
+    print item
     listbox.insert(tk.END, item)
 
 scrollbar = tk.Scrollbar(root)
