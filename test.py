@@ -5,7 +5,7 @@ nick =""
 roomlist = ["one", "tlistLabelo", "three", "four"]
 
 HOST = 'nefro.tk'
-PORT = 6661
+PORT = 6666
 
 def recv_all(sock, crlf):
     data = ""
@@ -21,52 +21,53 @@ def log_in(login,password):
         nick=login
         mGui.destroy()
 
-# Functions command returns command string in expected format
 
-# LOGIN:nick@haslo - login/register user with name nick
-def command_login(login, password):
-    return ''.join(["LOGIN:", login, "@", password, '\0'])
+	# Functions command returns command string in expected format
 
-
-# JOIN:room_name - join room
-def command_join(room_name):
-    print "my roomnname : " + room_name
-    return ''.join(["JOIN:", room_name, '\0'])
+	# LOGIN:nick@haslo - login/register user with name nick
+	def command_login(login, password):
+	    return ''.join(["LOGIN:", login, "@", password])
 
 
-# KICK:yournick:nick - disconnect user with name nick
-def command_kick(your_nick, kick_nick):
-    return ''.join(["KICK:", your_nick, ":", kick_nick, '\0'])
+	# JOIN:room_name - join room
+	def command_join(your_nick, room_name):
+	    print "my roomname : " + room_name
+	    return ''.join(["JOIN:", your_nick, "@", room_name])
 
 
-# BAN:yournick:nick - disconnect and pernamently ban usr with name nick
-def command_ban(your_nick, ban_nick):
-    return ''.join(["BAN:", your_nick, ":", ban_nick, '\0'])
+	# KICK:yournick:nick - disconnect user with name nick
+	def command_kick(your_nick, kick_nick):
+	    return ''.join(["KICK:", your_nick, ":", kick_nick])
 
 
-# CREATE:yournick:room_name - create room with name room_name
-def command_create(your_nick, new_room_name):
-    return ''.join(["CREATE:", your_nick, ":", new_room_name, '\0'])
+	# BAN:yournick:nick - disconnect and pernamently ban usr with name nick
+	def command_ban(your_nick, ban_nick):
+	    return ''.join(["BAN:", your_nick, ":", ban_nick])
 
 
-# DELETE:yournick:room_name - delete room with name room_name
-def command_delete(your_nick, room_to_delete):
-    return ''.join(["CREATE:", your_nick, ":", room_to_delete, '\0'])
+	# CREATE:yournick:room_name - create room with name room_name
+	def command_create(your_nick, new_room_name):
+	    return ''.join(["CREATE:", your_nick, ":", new_room_name])
 
 
-# ME:yournick - get info about yourself
-def command_me(your_nick):
-    return ''.join(["ME:", your_nick, '\0'])
+	# DELETE:yournick:room_name - delete room with name room_name
+	def command_delete(your_nick, room_to_delete):
+	    return ''.join(["DELETE:", your_nick, ":", room_to_delete])
 
 
-# LIST - get rooms list
-def command_list():
-    return ''.join(["LIST:", '\0'])
+	# ME:yournick - get info about yourself
+	def command_me(your_nick):
+	    return ''.join(["ME:", your_nick])
 
 
-# MSG:yournick@message - send message in courent room
-def command_message(your_nick, message):
-    return ''.join(["MSG:", your_nick, "@", message, '\0'])
+	# LIST - get rooms list
+	def command_list():
+	    return ''.join(["LIST:", '\0'])
+
+
+	# MSG:yournick@message - send message in courent room
+	def command_message(your_nick, message):
+	    return ''.join(["MSG:", your_nick, "@", message, '\0'])
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect((HOST, PORT))
@@ -99,40 +100,53 @@ button_login = tk.Button(text="Log in",command=lambda: log_in(input_login.get(),
 mGui.mainloop()
 
 def insert_message(input_command):
-    global nick
-    text.config(state='normal')
-    # if input sterts with / is recognised as command
-    if (input_command[0] == '/'):
-        # take command name
-        if " " in input_command:
-            command = input_command.split(" ", 1)
-            result = {
-                '/join': command_join(command[1]),
-                '/message': command_message(nick, command[1]),
-                '/kick': command_kick(nick, command[1]),
-                '/ban': command_ban(nick, command[1]),
-                '/create': command_create(nick, command[1]),
-                '/delete': command_delete(nick, command[1])
-            }.get(command[0])
-        else:
-            command = [input_command]
-            result = {
-                '/me': command_me(nick),
-                '/list': command_list(),
-            }.get(command[0])
+	    global nick
+	    text.config(state='normal')
+	    # if input sterts with / is recognised as command
+	    if (input_command[0] == '/'):
+	        # take command name
+	        if " " in input_command:
+	            command = input_command.split(" ", 1)
+	            if command[0] == '/join':
+	                result = ''.join(command_join(nick, command[1]))
+	            elif command[0] == '/message':
+	                result = ''.join(command_message(nick, command[1]))
+	            elif command[0] == '/kick':
+	                result = ''.join(command_ban(nick, command[1]))
+	            elif command[0] == '/ban':
+	                result = ''.join(command_create(nick, command[1]))
+	            elif command[0] == '/delete':
+	                result = ''.join(command_delete(nick, command[1]))
+	            elif command[0] == '/login':
+	                command = input_command.split(" ")
+	                nick = command[1]
+	                print nick
+	                password = command[2]
+	                print password
+	                result = ''.join(command_login(nick, password))
+	                print result
+	            else:
+	                result = None
+	        else:
+	            command = [input_command]
+	            if command[0] == '/me':
+	                result = ''.join(command_me(nick))
+	            elif command[0] == '/list':
+	                result = ''.join(command_list())
+	            else:
+	                result = None
 
-        # check if there was a command match
-        if result is None:
-            text.insert('end', "Command %s not found \n" % (command[0]))
-        else:
-            text.insert('end', "Command %s found \n" % (result))
-            secure_sock.send(result)
-            response_data = recv_all(secure_sock, "\r\n")
-            text.insert('end', "Response : %s  \n" % (response_data))
-    else:
-        text.insert('end', "Message %s \n" % (input_command))
-    text.config(state='disabled')
-
+	        # check if there was a command match
+	        if result is None:
+	            text.insert('end', "Command %s not found \n" % (command[0]))
+	        else:
+	            text.insert('end', "Command %s found \n" % (result))
+	            secure_sock.send(result)
+	            response_data = recv_all(secure_sock, "\r\n")
+	            text.insert('end', "Response : %s  \n" % (response_data))
+	    else:
+	        text.insert('end', "Message %s \n" % (input_command))
+	    text.config(state='disabled')
 # create a Tk root listLabelidget
 root = tk.Tk()
 root.title("mIrc Chat")
