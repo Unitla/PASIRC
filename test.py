@@ -249,8 +249,6 @@ def recv_all(sock, crlf):
 
 
 def disconnect():
-    # check if saving
-    # if not:
     insert_message("/quit")
     root.destroy()
 
