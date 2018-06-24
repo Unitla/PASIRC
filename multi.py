@@ -154,16 +154,25 @@ class ClientThread(threading.Thread):
         self.connection.close()
 
 
-class Server:
+class ServerThread(threading.Thread):
     def __init__(self, ip, port):
         self.ip = ip
         self.port = port
+        if ":" in ip:
+            print "ipv6"
+            self.version=6
+        if '.' in ip:
+            print "ipv4"
+            self.version=4
         self.address = (self.ip, self.port)
         self.server = None
 
     def run(self):
         try:
-            self.server = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+            if self.version == 6:
+                self.server = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+            if self.version == 4:
+                self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.server.bind(self.address)
             self.server.listen(5)
             self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -173,8 +182,11 @@ class Server:
             while True:
                 #connection, (ip, port) = self.server.accept()
                 print ssl_sock.accept()
-                connection, (ip, port,a,b) = ssl_sock.accept()
-                client = (ip, port);
+                if self.version==6:
+                    connection, (ip, port,a,b) = ssl_sock.accept()
+                if self.version==4:
+                    connection, (ip, port) = ssl_sock.accept()
+                client = (ip, port)
                 print client
 
                 #clients.append(client)
@@ -192,5 +204,7 @@ class Server:
 
 
 if __name__ == '__main__':
-    s = Server("::1", 6666)
-    s.run()
+    s_v6 = Server("::1",8888)
+    s_v6.run()
+    s_v4 = Server("127.0.0.1", 6666)
+    s_v4.run()

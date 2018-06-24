@@ -1,14 +1,15 @@
-import socket, ssl
+import Tkinter as tk
+import socket,ssl
 
-HOST = 'nefro.tk'
-PORT = 6666
-
-
+#get whole response
 def recv_all(sock, crlf):
         data = ""
         while not data.endswith(crlf):
                 data = data + sock.read(1)
         return data
+
+HOST = 'nefro.tk'
+PORT = 6666
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect((HOST, PORT))
@@ -23,13 +24,3 @@ else:
 cert = secure_sock.getpeercert()
 if not cert or ssl.match_hostname(cert, HOST):
     raise Exception("Error" )
-secure_sock.send("LOGIN:admin@haslo")
-print recv_all(secure_sock, "\r\n")
-secure_sock.send("LOGIN:admin@haslo")
-print recv_all(secure_sock, "\r\n")
-secure_sock.send("ME:admin")
-print recv_all(secure_sock, "\r\n")
-if not cert or ssl.match_hostname(cert, HOST):    raise Exception("Error" )
-secure_sock.send(" ... ")
-secure_sock.close()
-sock.close()
