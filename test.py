@@ -3,6 +3,7 @@ import socket, ssl
 
 nick = ""
 roomlist = ["one", "tlistLabelo", "three", "four"]
+users = ""
 
 HOST = 'nefro.tk'
 PORT = 6666
@@ -68,6 +69,10 @@ def command_users():
     return ''.join(["USERS:"])
 
 
+def command_quit():
+    return ''.join(["QUIT:", nick])
+
+
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect((HOST, PORT))
 context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
@@ -94,6 +99,23 @@ input_password = tk.Entry(mGui)
 input_password.grid(row=1, column=1, sticky=tk.W)
 
 
+def get_users_to_list():
+    secure_sock.send(command_users())
+    response_data = recv_all(secure_sock, "\r\n")
+    print response_data
+    global users
+    users = response_data[5:-4].replace('\'', '').replace(' ', '').split(',')
+    print users
+
+
+def get_rooms_to_list():
+    secure_sock.send(command_list())
+    response_data = recv_all(secure_sock, "\r\n")
+    global roomlist
+    roomlist = response_data[5:-4].replace('\'', '').replace(' ', '').split(',')
+    print roomlist
+
+
 def log_in(login, password):
     secure_sock.send(command_login(login, password))
     response_data = recv_all(secure_sock, "\r\n")
@@ -102,12 +124,8 @@ def log_in(login, password):
         global nick
         nick = login
         mGui.destroy()
-        secure_sock.send(command_list())
-        response_data = recv_all(secure_sock, "\r\n")
-        print response_data[5:-4]
-        global roomlist
-        roomlist = response_data[5:-4].replace('\'', '').replace(' ', '').split(',')
-        print roomlist
+        get_rooms_to_list()
+        get_users_to_list()
     else:
         quit()
 
@@ -155,6 +173,8 @@ def insert_message(input_command):
                 result = ''.join(command_me(nick))
             elif command[0] == '/list':
                 result = ''.join(command_list())
+            elif command[0] == '/quit':
+                result = ''.join(command_quit())
             elif command[0] == '/users':
                 result = ''.join(command_users())
             else:
@@ -167,6 +187,7 @@ def insert_message(input_command):
             text.insert('end', "Command %s found \n" % (result))
             secure_sock.send(result)
             response_data = recv_all(secure_sock, "\r\n")
+            print response_data
             text.insert('end', "Response : %s  \n" % (response_data))
     else:
         text.insert('end', "Message %s \n" % (input_command))
@@ -206,7 +227,6 @@ button = tk.Button(root, text="push command", width=25, command=lambda: insert_m
 button.pack()
 
 for item in roomlist:
-    print item
     listbox.insert(tk.END, item)
 
 scrollbar = tk.Scrollbar(root)
@@ -227,5 +247,14 @@ def recv_all(sock, crlf):
         data = data + sock.read(1)
     return data
 
+
+def disconnect():
+    # check if saving
+    # if not:
+    insert_message("/quit")
+    root.destroy()
+
+
+root.protocol('WM_DELETE_WINDOW', disconnect)  # root is your root window
 
 root.mainloop()
