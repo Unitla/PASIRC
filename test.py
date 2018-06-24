@@ -35,9 +35,9 @@ def command_login(login, password):
 
 
 # JOIN:room_name - join room
-def command_join(room_name):
-    print "my roomnname : " + room_name
-    return ''.join(["JOIN:", room_name, '\0'])
+def command_join(your_nick, room_name):
+    print "my roomname : " + room_name
+    return ''.join(["JOIN:", your_nick, "@", room_name, '\0'])
 
 
 # KICK:yournick:nick - disconnect user with name nick
@@ -83,20 +83,26 @@ def insert_message(input_command):
         # take command name
         if " " in input_command:
             command = input_command.split(" ", 1)
-            result = {
-                '/join': command_join(command[1]),
-                '/message': command_message(nick, command[1]),
-                '/kick': command_kick(nick, command[1]),
-                '/ban': command_ban(nick, command[1]),
-                '/create': command_create(nick, command[1]),
-                '/delete': command_delete(nick, command[1])
-            }.get(command[0])
+            if command[0] == '/join':
+                result = ''.join(command_join(nick, command[1]))
+            elif command[0] == '/message':
+                result = ''.join(command_message(nick, command[1]))
+            elif command[0] == '/kick':
+                result = ''.join(command_ban(nick, command[1]))
+            elif command[0] == '/ban':
+                result = ''.join(command_create(nick, command[1]))
+            elif command[0] == '/delete':
+                result = ''.join(command_delete(nick, command[1]))
+            else:
+                result = None
         else:
             command = [input_command]
-            result = {
-                '/me': command_me(nick),
-                '/list': command_list(),
-            }.get(command[0])
+            if command[0] == '/me':
+                result = ''.join(command_me(nick))
+            elif command[0] == '/list':
+                result = ''.join(command_list())
+            else:
+                result = None
 
         # check if there was a command match
         if result is None:
