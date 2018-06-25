@@ -89,6 +89,9 @@ cert = secure_sock.getpeercert()
 if not cert or ssl.match_hostname(cert, HOST):
     raise Exception("Error" )
 
+secure_sock.send("LOGIN:admin@haslo")
+print recv_all(secure_sock, "\r\n")
+
 mGui = tk.Tk()
 mGui.title("Log-In")
 
@@ -184,21 +187,24 @@ def insert_message(window,input_command):
 
         # check if there was a command match
         if result is None:
-            window.text.insert('end', "Command %s not found \n" % (command[0]))
+            window.write( "Command %s not found \n" % (command[0]))
         else:
-            window.text.insert('end', "Command %s found \n" % (result))
+            window.write( "Command %s found \n" % (result))
             secure_sock.send(result)
-            response_data = recv_all(secure_sock, "\r\n")
-            print response_data
-            window.text.insert('end', "Response : %s  \n" % (response_data))
     else:
-        window.text.insert('end', "Message %s \n" % (input_command))
-    window.text.config(state='disabled')
+        window.write("Message %s \n" % (input_command))
+        secure_sock.send(input_command)
+
 
 
 
 class UserWindow():
     # create a Tk root listLabelidget
+
+    def disconnect(self):
+        insert_message(self,"/quit")
+        self.root.destroy()
+
     def window(self):
         self.root = tk.Tk()
         self.root.title("mIrc Chat")
@@ -244,7 +250,7 @@ class UserWindow():
         scrollbar.config(command=self.text.yview)
 
         scrollbar.pack()
-        self.root.protocol('WM_DELETE_WINDOW', self.disconnect())  # root is your root window
+        #self.root.protocol('WM_DELETE_WINDOW', self.disconnect())  # root is your root window
         self.root.mainloop()
 
     def loop(self):
@@ -254,11 +260,12 @@ class UserWindow():
                 if data:
                     print data
             except ssl.SSLError as err:
-                print " %s %s "+err
+                print " %s %s "+str(err)
 
-    def disconnect(self):
-        insert_message(self,"/quit")
-        self.root.destroy()
+    def write(self,data):
+        self.text.config(state='normal')
+        self.text.insert('end', "%s\n" % (data))
+        self.text.config(state='disabled')
 
 
 w = UserWindow()
