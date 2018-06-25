@@ -1,6 +1,7 @@
 import Tkinter as tk
 import socket, ssl
-import hashlib
+import hashlib,threading
+from re import U
 
 nick = ""
 roomlist = ["one", "tlistLabelo", "three", "four"]
@@ -74,20 +75,19 @@ def command_users():
 def command_quit():
     return ''.join(["QUIT:", nick])
 
-
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect((HOST, PORT))
 context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
 context.verify_mode = ssl.CERT_REQUIRED
 context.load_verify_locations('cert.pem')
-# context.load_cert_chain(certfile='./certs/client/client.crt', keyfile="./certs/client/client.key")
+#context.load_cert_chain(certfile='./certs/client/client.crt', keyfile="./certs/client/client.key")
 if ssl.HAS_SNI:
     secure_sock = context.wrap_socket(sock, server_hostname=HOST)
-else:
+else :
     secure_sock = context.wrap_socket(sock)
 cert = secure_sock.getpeercert()
 if not cert or ssl.match_hostname(cert, HOST):
-    raise Exception("Error")
+    raise Exception("Error" )
 
 mGui = tk.Tk()
 mGui.title("Log-In")
@@ -139,9 +139,9 @@ button_login = tk.Button(text="Log in", command=lambda: log_in(input_login.get()
 mGui.mainloop()
 
 
-def insert_message(input_command):
+def insert_message(window,input_command):
     global nick
-    text.config(state='normal')
+    window.text.config(state='normal')
     # if input sterts with / is recognised as command
     if (input_command[0] == '/'):
         # take command name
@@ -184,77 +184,88 @@ def insert_message(input_command):
 
         # check if there was a command match
         if result is None:
-            text.insert('end', "Command %s not found \n" % (command[0]))
+            window.text.insert('end', "Command %s not found \n" % (command[0]))
         else:
-            text.insert('end', "Command %s found \n" % (result))
+            window.text.insert('end', "Command %s found \n" % (result))
             secure_sock.send(result)
             response_data = recv_all(secure_sock, "\r\n")
             print response_data
-            text.insert('end', "Response : %s  \n" % (response_data))
+            window.text.insert('end', "Response : %s  \n" % (response_data))
     else:
-        text.insert('end', "Message %s \n" % (input_command))
-    text.config(state='disabled')
+        window.text.insert('end', "Message %s \n" % (input_command))
+    window.text.config(state='disabled')
 
 
-# create a Tk root listLabelidget
-root = tk.Tk()
-root.title("mIrc Chat")
 
-# first parametr - parent listLabelindolistLabel
-listLabel = tk.Label(root, text="Lista Pokoi")
-listLabel.grid(row=0, column=0, sticky=tk.W)
-# pack - fit the size of the listLabelindolistLabel to the given text
-listLabel.pack()
+class UserWindow():
+    # create a Tk root listLabelidget
+    def window(self):
+        self.root = tk.Tk()
+        self.root.title("mIrc Chat")
 
-# listbox
+        # first parametr - parent listLabelindolistLabel
+        listLabel = tk.Label(self.root, text="Lista Pokoi")
+        listLabel.grid(row=0, column=0, sticky=tk.W)
+        # pack - fit the size of the listLabelindolistLabel to the given text
+        listLabel.pack()
 
-listbox = tk.Listbox(root)
-# listbox.grid(row=0, column=1)
-listbox.pack()
+        # listbox
 
-# first parametr - parent listLabelindolistLabel
-messagesLabel = tk.Label(root, text="Wiadomosci")
-# messagesLabel.grid(row=1, column=0, sticky=tk.W)
-# pack - fit the size of the listLabelindolistLabel to the given text
-messagesLabel.pack()
+        listbox = tk.Listbox(self.root)
+        # listbox.grid(row=0, column=1)
+        listbox.pack()
 
-commantLine = tk.Entry(root)
-# commantLine.grid(row=1, column=1, sticky=tk.W)
-commantLine.pack()
-# can listLabelrite after program starts
-commantLine.focus()
+        # first parametr - parent listLabelindolistLabel
+        messagesLabel = tk.Label(self.root, text="Wiadomosci")
+        # messagesLabel.grid(row=1, column=0, sticky=tk.W)
+        # pack - fit the size of the listLabelindolistLabel to the given text
+        messagesLabel.pack()
 
-# lambda is used to pass parameters to function
-button = tk.Button(root, text="push command", width=25, command=lambda: insert_message(commantLine.get()))
-button.pack()
+        commantLine = tk.Entry(self.root)
+        #commantLine.grid(row=1, column=1, sticky=tk.W)
+        commantLine.pack()
+        # can listLabelrite after program starts
+        commantLine.focus()
 
-for item in roomlist:
-    listbox.insert(tk.END, item)
+        # lambda is used to pass parameters to function
+        button = tk.Button(self.root, text="push command", width=25, command=lambda: insert_message(self,commantLine.get()))
+        button.pack()
 
-scrollbar = tk.Scrollbar(root)
-scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        for item in roomlist:
+            listbox.insert(tk.END, item)
 
-text = tk.Text(root, wrap=tk.WORD, yscrollcommand=scrollbar.set)
-text.config(state=tk.DISABLED)
-text.pack()
+        scrollbar = tk.Scrollbar(self.root)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-scrollbar.config(command=text.yview)
+        self.text = tk.Text(self.root, wrap=tk.WORD, yscrollcommand=scrollbar.set)
+        self.text.config(state=tk.DISABLED)
+        self.text.pack()
 
-scrollbar.pack()
+        scrollbar.config(command=self.text.yview)
+
+        scrollbar.pack()
+        self.root.protocol('WM_DELETE_WINDOW', self.disconnect())  # root is your root window
+        self.root.mainloop()
+
+    def loop(self):
+        while 1:
+            try:
+                data = secure_sock.recv(1024)
+                if data:
+                    print data
+            except ssl.SSLError as err:
+                print " %s %s "+err
+
+    def disconnect(self):
+        insert_message(self,"/quit")
+        self.root.destroy()
 
 
-def recv_all(sock, crlf):
-    data = ""
-    while not data.endswith(crlf):
-        data = data + sock.read(1)
-    return data
+w = UserWindow()
+ts1 = threading.Thread(target = w.window)
+ts2 = threading.Thread(target = w.loop)
+ts1.start()
+ts2.start()
 
-
-def disconnect():
-    insert_message("/quit")
-    root.destroy()
-
-
-root.protocol('WM_DELETE_WINDOW', disconnect)  # root is your root window
-
-root.mainloop()
+ts1.join()
+ts2.join()
