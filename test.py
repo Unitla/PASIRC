@@ -1,6 +1,6 @@
 import Tkinter as tk
 import socket, ssl
-import hashlib,threading
+import hashlib, threading
 from re import U
 
 nick = ""
@@ -9,6 +9,8 @@ users = ""
 
 HOST = 'nefro.tk'
 PORT = 6666
+
+current_room = 'default'
 
 
 def recv_all(sock, crlf):
@@ -29,6 +31,8 @@ def command_login(login, password):
 # JOIN:room_name - join room
 def command_join(your_nick, room_name):
     print "my roomname : " + room_name
+    global current_room
+    current_room = room_name
     return ''.join(["JOIN:", your_nick, "@", room_name])
 
 
@@ -64,7 +68,7 @@ def command_list():
 
 # MSG:yournick@message - send message in courent room
 def command_message(your_nick, message):
-    return ''.join(["MSG:", your_nick, "@", message, '\0'])
+    return ''.join(["MSG:", your_nick, "@", current_room, "@", message, '\r\n'])
 
 
 # USERS: - get all users
@@ -75,19 +79,20 @@ def command_users():
 def command_quit():
     return ''.join(["QUIT:", nick])
 
+
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect((HOST, PORT))
 context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
 context.verify_mode = ssl.CERT_REQUIRED
 context.load_verify_locations('cert.pem')
-#context.load_cert_chain(certfile='./certs/client/client.crt', keyfile="./certs/client/client.key")
+# context.load_cert_chain(certfile='./certs/client/client.crt', keyfile="./certs/client/client.key")
 if ssl.HAS_SNI:
     secure_sock = context.wrap_socket(sock, server_hostname=HOST)
-else :
+else:
     secure_sock = context.wrap_socket(sock)
 cert = secure_sock.getpeercert()
 if not cert or ssl.match_hostname(cert, HOST):
-    raise Exception("Error" )
+    raise Exception("Error")
 
 secure_sock.send("LOGIN:admin@haslo")
 print recv_all(secure_sock, "\r\n")
@@ -142,7 +147,7 @@ button_login = tk.Button(text="Log in", command=lambda: log_in(input_login.get()
 mGui.mainloop()
 
 
-def insert_message(window,input_command):
+def insert_message(window, input_command):
     global nick
     window.text.config(state='normal')
     # if input sterts with / is recognised as command
@@ -187,22 +192,20 @@ def insert_message(window,input_command):
 
         # check if there was a command match
         if result is None:
-            window.write( "Command %s not found \n" % (command[0]))
+            window.write("Command %s not found \n" % (command[0]))
         else:
-            window.write( "Command %s found \n" % (result))
+            window.write("Command %s found \n" % (result))
             secure_sock.send(result)
     else:
         window.write("Message %s \n" % (input_command))
         secure_sock.send(input_command)
 
 
-
-
 class UserWindow():
     # create a Tk root listLabelidget
 
     def disconnect(self):
-        insert_message(self,"/quit")
+        insert_message(self, "/quit")
         self.root.destroy()
 
     def window(self):
@@ -228,13 +231,14 @@ class UserWindow():
         messagesLabel.pack()
 
         commantLine = tk.Entry(self.root)
-        #commantLine.grid(row=1, column=1, sticky=tk.W)
+        # commantLine.grid(row=1, column=1, sticky=tk.W)
         commantLine.pack()
         # can listLabelrite after program starts
         commantLine.focus()
 
         # lambda is used to pass parameters to function
-        button = tk.Button(self.root, text="push command", width=25, command=lambda: insert_message(self,commantLine.get()))
+        button = tk.Button(self.root, text="push command", width=25,
+                           command=lambda: insert_message(self, commantLine.get()))
         button.pack()
 
         for item in roomlist:
@@ -250,7 +254,7 @@ class UserWindow():
         scrollbar.config(command=self.text.yview)
 
         scrollbar.pack()
-        #self.root.protocol('WM_DELETE_WINDOW', self.disconnect())  # root is your root window
+        # self.root.protocol('WM_DELETE_WINDOW', self.disconnect())  # root is your root window
         self.root.mainloop()
 
     def loop(self):
@@ -259,18 +263,19 @@ class UserWindow():
                 data = secure_sock.recv(1024)
                 if data:
                     print data
+                    self.write(data)
             except ssl.SSLError as err:
-                print " %s %s "+str(err)
+                print " %s %s " + str(err)
 
-    def write(self,data):
+    def write(self, data):
         self.text.config(state='normal')
         self.text.insert('end', "%s\n" % (data))
         self.text.config(state='disabled')
 
 
 w = UserWindow()
-ts1 = threading.Thread(target = w.window)
-ts2 = threading.Thread(target = w.loop)
+ts1 = threading.Thread(target=w.window)
+ts2 = threading.Thread(target=w.loop)
 ts1.start()
 ts2.start()
 
