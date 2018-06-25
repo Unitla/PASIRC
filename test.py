@@ -1,5 +1,6 @@
 import Tkinter as tk
 import socket, ssl
+import hashlib
 
 nick = ""
 roomlist = ["one", "tlistLabelo", "three", "four"]
@@ -20,6 +21,7 @@ def recv_all(sock, crlf):
 
 # LOGIN:nick@haslo - login/register user with name nick
 def command_login(login, password):
+    password = hashlib.md5(password).hexdigest()
     return ''.join(["LOGIN:", login, "@", password])
 
 
