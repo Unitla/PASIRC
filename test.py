@@ -49,11 +49,15 @@ def command_ban(your_nick, ban_nick):
 
 # CREATE:yournick:room_name - create room with name room_name
 def command_create(your_nick, new_room_name):
+    roomlist.append(new_room_name)
     return ''.join(["CREATE:", your_nick, "@", new_room_name])
 
 
 # DELETE:yournick:room_name - delete room with name room_name
 def command_delete(your_nick, room_to_delete):
+    if room_to_delete in roomlist:
+        index = roomlist.index(room_to_delete)
+        roomlist.pop(index)
     return ''.join(["DELETE:", your_nick, "@", room_to_delete])
 
 
@@ -266,8 +270,13 @@ class UserWindow():
                     print data
                     self.write(data)
                     print data[0], data[2]
-                    if data[0] == '2' and data[2] == '6':
-                        self.update_list(data)
+                    if data[0] == '2':
+                        if data[2] == '6':
+                            self.update_list(data)
+                        elif data[2] == '4':
+                            self.update_local_room_list()
+                        elif data[2] == '5':
+                            self.update_local_room_list()
             except ssl.SSLError as err:
                 print " %s %s " + str(err)
 
@@ -278,6 +287,10 @@ class UserWindow():
         for item in roomlist:
             self.listbox.insert(tk.END, item)
 
+    def update_local_room_list(self):
+        self.listbox.delete(0, 'end')
+        for item in roomlist:
+            self.listbox.insert(tk.END, item)
 
     def write(self, data):
         self.text.config(state='normal')
