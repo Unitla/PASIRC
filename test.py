@@ -95,8 +95,8 @@ cert = secure_sock.getpeercert()
 if not cert or ssl.match_hostname(cert, HOST):
     raise Exception("Error")
 
-#secure_sock.send("LOGIN:admin@haslo")
-#print recv_all(secure_sock, "\r\n")
+# secure_sock.send("LOGIN:admin@haslo")
+# print recv_all(secure_sock, "\r\n")
 
 mGui = tk.Tk()
 mGui.title("Log-In")
@@ -221,9 +221,9 @@ class UserWindow():
 
         # listbox
 
-        listbox = tk.Listbox(self.root)
+        self.listbox = tk.Listbox(self.root)
         # listbox.grid(row=0, column=1)
-        listbox.pack()
+        self.listbox.pack()
 
         # first parametr - parent listLabelindolistLabel
         messagesLabel = tk.Label(self.root, text="Wiadomosci")
@@ -243,7 +243,7 @@ class UserWindow():
         button.pack()
 
         for item in roomlist:
-            listbox.insert(tk.END, item)
+            self.listbox.insert(tk.END, item)
 
         scrollbar = tk.Scrollbar(self.root)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -265,8 +265,19 @@ class UserWindow():
                 if data:
                     print data
                     self.write(data)
+                    print data[0], data[2]
+                    if data[0] == '2' and data[2] == '6':
+                        self.update_list(data)
             except ssl.SSLError as err:
                 print " %s %s " + str(err)
+
+    def update_list(self, data):
+        self.listbox.delete(0, 'end')
+        roomlist = data[5:-4].replace('\'', '').replace(' ', '').split(',')
+        print roomlist
+        for item in roomlist:
+            self.listbox.insert(tk.END, item)
+
 
     def write(self, data):
         self.text.config(state='normal')
