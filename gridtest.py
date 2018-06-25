@@ -26,7 +26,9 @@ if not cert or ssl.match_hostname(cert, HOST):
     raise Exception("Error" )
 secure_sock.send("LOGIN:admin@haslo")
 print recv_all(secure_sock, "\r\n")
-secure_sock.send("ME:root")
+secure_sock.send("LOGIN:admin@haslo")
+print recv_all(secure_sock, "\r\n")
+secure_sock.send("ME:admin")
 #secure_sock.close()
 #sock.close()
 
@@ -55,8 +57,8 @@ class Window():
 w = Window()
 ts1 = threading.Thread(target = w.window)
 ts2 = threading.Thread(target = w.loop)
-ts1.run()
-ts2.run()
+ts1.start()
+ts2.start()
 
 ts1.join()
 ts2.join()

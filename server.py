@@ -1,5 +1,10 @@
 #!/usr/bin/env python
-import socket, sys, threading, ssl
+
+import socket, threading, ssl
+import sys
+# sys.setdefaultencoding() does not exist, here!
+reload(sys)  # Reload does the trick!
+sys.setdefaultencoding('UTF8')
 
 KEYFILE = 'key.pem'
 CERTFILE = 'cacert.pem'
@@ -20,7 +25,7 @@ def parse_recvd_data(data,split):
   return (head, rest)
 
 
-def check_head(data):
+def check_head(data,sock):
 
         (head, rest) = parse_recvd_data(data,head_split)
         if head[0] == "LOGIN":
@@ -34,13 +39,13 @@ def check_head(data):
         elif head[0] == "ME":
                 return user_info(rest)
         elif head[0] == "CREATE":
-                return create_room(rest)
+                return create_room(rest,sock)
         elif head[0] == "DELETE":
-                return delete_room(rest)
+                return delete_room(rest,sock)
         elif head[0] == "JOIN":
-                return join_room(rest)
+                return join_room(rest,sock)
         elif head[0] == "KICK":
-                return kick(rest)
+                return kick(rest,sock)
         elif head[0] == "USERS":
                 return get_all_users()
         elif head[0] == "PRIV":
@@ -51,7 +56,6 @@ def check_head(data):
                 return add_permision(rest)
         elif head[0] == "BAN":
                 return ban(rest)
-
         else:
                 return (100, "Command not found")
 
@@ -108,13 +112,14 @@ def update_clients(connection, data):
         #print rooms
         clients[connection] = login[0]
 
-def create_room(data):
+def create_room(data,sock):
         (login, rest) = parse_recvd_data(data,login_split)
         results = filter(lambda user: user['name'] == login[0], users)
         if results[0]['permisions'] >= 2:
                 return (103, "Insufficient premision to create room ")
 
         else:
+                clean_client(sock)
                 socket = clients.keys()[clients.values().index(login[0])]
                 lis = list()
                 lis.append(socket)
@@ -124,25 +129,28 @@ def create_room(data):
                 print "------"
                 return (204, "Room suceffully created")
 
-def delete_room(data):
+def delete_room(data,sock):
         (login, rest) = parse_recvd_data(data,login_split)
         results = filter(lambda user: user['name'] == login[0], users)
         if results[0]['permisions'] >= 2:
                 return (104, "Insufficient premision to delete room")
         else:
+                clean_client(sock)
+                rooms['default'].append(sock)
                 del rooms[rest]
                 return (205, "Room deleted")
 def get_rooms_list():
         list_of_rooms = rooms.keys()
         return (206, str(list_of_rooms))
 
-def join_room(data):
+def join_room(data,sock):
         (login, rest) = parse_recvd_data(data,login_split)
         #results = filter(lambda socket: socket['name'] == login[0], clients)
         list_of_rooms = rooms.keys()
         if rest not in list_of_rooms:
                 return (105, "Room doesn't exist")
         else:
+                clean_client(sock)
                 socket = clients.keys()[clients.values().index(login[0])]
                 #lis= rooms[rest]
                 lis=list()
@@ -167,7 +175,7 @@ def kick(data):
                 else:
                         socket.sendall(str("209 You have been kicked"))
                         socket.close()
-                        clean_client(socket)
+                        clean_client_all(socket)
                         return (208, "User have been successfully kicked")
 
 def ban(data):
@@ -214,9 +222,18 @@ def add_permision(data):
                         results[0]['permisions'] = 1
                         users[index] = results[0]
                         return (216, "Permisions successfully upgraded" )
-
-
 def clean_client(sock):
+        for item in rooms:
+                print rooms[item]
+                if sock in rooms[item]:
+                        del rooms[item][rooms[item].index(sock)]
+
+def clean_client_all(sock):
+        for item in rooms:
+                print rooms[item]
+                if sock in rooms[item]:
+                        del rooms[item][rooms[item].index(sock)]
+
         del clients[sock]
 
 
@@ -230,16 +247,17 @@ class ClientThread(threading.Thread):
 
     def run(self):
         while True:
-            data = self.connection.recv(1024)
+            data = self.connection.recv(8192)
             if data:
                 if data.startswith('exit'):
                         break
+                data = data[:-2]
                 (head, rest) = parse_recvd_data(data,head_split)
                 print data
                 print head[0]
                 print rest
                 #print check_head(data)
-                (code, message) = check_head(data)
+                (code, message) = check_head(data,self.connection)
                 print clients
                 #print self.connection
                 send_code(self.connection,code,message)
@@ -251,7 +269,7 @@ class ClientThread(threading.Thread):
                 break
         #delete all junk sockets in rooms etc
         print "close"
-        clean_client(self.connection)
+        clean_client_all(self.connection)
         self.connection.close()
 
 

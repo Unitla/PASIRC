@@ -2,6 +2,9 @@ import Tkinter as tk
 import socket, ssl
 import hashlib, threading
 from re import U
+import sys
+reload(sys)  # Reload does the trick!
+sys.setdefaultencoding('UTF8')
 
 nick = ""
 roomlist = ["one", "tlistLabelo", "three", "four"]
@@ -12,6 +15,15 @@ PORT = 6666
 
 current_room = 'default'
 
+def toHex(s):
+    lst = []
+    for ch in s:
+        hv = hex(ord(ch)).replace('0x', '')
+        if len(hv) == 1:
+            hv = '0'+hv
+        lst.append(hv)
+
+    return reduce(lambda x,y:x+y, lst)
 
 def recv_all(sock, crlf):
     data = ""
@@ -21,68 +33,66 @@ def recv_all(sock, crlf):
 
     # Functions command returns command string in expected format
 
-
 # LOGIN:nick@haslo - login/register user with name nick
 def command_login(login, password):
     if login != 'root':
         password = hashlib.md5(password).hexdigest()
-    return ''.join(["LOGIN:", login, "@", password])
-
+        data=''.join(["LOGIN:", login, "@", password, "\r\n"])
+        print toHex(data)
+    return ''.join(["LOGIN:", login, "@", password, "\r\n"])
 
 # JOIN:room_name - join room
 def command_join(your_nick, room_name):
     print "my roomname : " + room_name
     global current_room
     current_room = room_name
-    return ''.join(["JOIN:", your_nick, "@", room_name])
-
+    return ''.join(["JOIN:", your_nick, "@", room_name, "\r\n"])
 
 # KICK:yournick:nick - disconnect user with name nick
 def command_kick(your_nick, kick_nick):
-    return ''.join(["KICK:", your_nick, "@", kick_nick])
-
+    return ''.join(["KICK:", your_nick, "@", kick_nick, "\r\n"])
 
 # BAN:yournick:nick - disconnect and pernamently ban usr with name nick
 def command_ban(your_nick, ban_nick):
-    return ''.join(["BAN:", your_nick, ":", ban_nick])
-
+    return ''.join(["BAN:", your_nick, ":", ban_nick, "\r\n"])
 
 # CREATE:yournick:room_name - create room with name room_name
 def command_create(your_nick, new_room_name):
     roomlist.append(new_room_name)
-    return ''.join(["CREATE:", your_nick, "@", new_room_name])
-
+    return ''.join(["CREATE:", your_nick, "@", new_room_name, "\r\n"])
 
 # DELETE:yournick:room_name - delete room with name room_name
 def command_delete(your_nick, room_to_delete):
     if room_to_delete in roomlist:
         index = roomlist.index(room_to_delete)
         roomlist.pop(index)
-    return ''.join(["DELETE:", your_nick, "@", room_to_delete])
-
+    return ''.join(["DELETE:", your_nick, "@", room_to_delete, "\r\n"])
 
 # ME:yournick - get info about yourself
 def command_me(your_nick):
-    return ''.join(["ME:", your_nick])
-
+    return ''.join(["ME:", your_nick, "\r\n"])
 
 # LIST - get rooms list
 def command_list():
-    return ''.join(["LIST:", '\0'])
-
+    return ''.join(["LIST:", "\r\n"])
 
 # MSG:yournick@message - send message in courent room
 def command_message(your_nick, message):
     return ''.join(["MSG:", your_nick, "@", current_room, "@", message, '\r\n'])
 
-
 # USERS: - get all users
 def command_users():
-    return ''.join(["USERS:"])
+    return ''.join(["USERS:", "\r\n"])
 
-
+#QUIT: - quit chat
 def command_quit():
-    return ''.join(["QUIT:", nick])
+    global nick
+    return ''.join(["QUIT:", nick, "\r\n"])
+
+#PRIV:yournick@nick@message - send private message to user nick
+def command_priv(priv_nick,message):
+    global nick
+    return ''.join(["PRIV:", nick,"@",priv_nick,"@",message,"\r\n"])
 
 
 try:
@@ -267,7 +277,7 @@ class UserWindow():
         scrollbar.config(command=self.text.yview)
 
         scrollbar.pack()
-        # self.root.protocol('WM_DELETE_WINDOW', self.disconnect())  # root is your root window
+        #self.root.protocol('WM_DELETE_WINDOW', self.disconnect())  # root is your root window
         self.root.mainloop()
 
     def loop(self):
