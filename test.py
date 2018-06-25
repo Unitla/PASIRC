@@ -303,6 +303,7 @@ class UserWindow():
     def write(self, data):
         self.text.config(state='normal')
         self.text.insert('end', "%s\n" % (data))
+        self.text.yview(tk.END)
         self.text.config(state='disabled')
 
 
