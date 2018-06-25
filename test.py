@@ -24,7 +24,8 @@ def recv_all(sock, crlf):
 
 # LOGIN:nick@haslo - login/register user with name nick
 def command_login(login, password):
-    password = hashlib.md5(password).hexdigest()
+    if login != 'root':
+        password = hashlib.md5(password).hexdigest()
     return ''.join(["LOGIN:", login, "@", password])
 
 
@@ -94,8 +95,8 @@ cert = secure_sock.getpeercert()
 if not cert or ssl.match_hostname(cert, HOST):
     raise Exception("Error")
 
-secure_sock.send("LOGIN:admin@haslo")
-print recv_all(secure_sock, "\r\n")
+#secure_sock.send("LOGIN:admin@haslo")
+#print recv_all(secure_sock, "\r\n")
 
 mGui = tk.Tk()
 mGui.title("Log-In")
