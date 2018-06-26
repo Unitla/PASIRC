@@ -271,7 +271,7 @@ class UserWindow():
 
         # lambda is used to pass parameters to function
         self.button = tk.Button(self.root, text="push command", width=25,
-                           command=lambda: insert_message(self, commantLine.get()))
+                                command=lambda: insert_message(self, commantLine.get()))
         self.button.pack()
 
         for item in roomlist:
@@ -287,11 +287,12 @@ class UserWindow():
         scrollbar.config(command=self.text.yview)
 
         scrollbar.pack()
-        #self.root.protocol('WM_DELETE_WINDOW', self.disconnect())  # root is your root window
+        # self.root.protocol('WM_DELETE_WINDOW', self.disconnect())  # root is your root window
         self.root.mainloop()
 
     def loop(self):
-        while 1:
+        exit = 1
+        while exit:
             try:
                 data = secure_sock.recv(1024)
                 if data:
@@ -305,10 +306,19 @@ class UserWindow():
                             self.update_local_room_list()
                         elif data[2] == '9':
                             self.button.destroy()
-                        elif data[1] == '1' and data[2]=='8':
-                            self.button.destroy()
+                            secure_sock.close()
+                            sock.close()
+                            exit = 0
+                        elif data[1] == '1':
+                            if data[2] == '8' and data[2] == '0':
+                                self.button.destroy()
+                                secure_sock.close()
+                                sock.close()
+                                exit = 0
             except ssl.SSLError as err:
                 print " %s %s " + str(err)
+                self.write(str(err))
+                self.button.destroy()
 
     def update_list(self, data):
         self.listbox.delete(0, 'end')
