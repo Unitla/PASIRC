@@ -226,7 +226,8 @@ def insert_message(window, input_command):
             secure_sock.send(result)
     else:
         window.write("Message %s \n" % (input_command))
-        secure_sock.send(input_command)
+        result = ''.join(command_message(nick, input_command))
+        secure_sock.send(result)
 
 
 class UserWindow():
