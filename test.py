@@ -49,7 +49,7 @@ def command_kick(your_nick, kick_nick):
 
 # BAN:yournick:nick - disconnect and pernamently ban usr with name nick
 def command_ban(your_nick, ban_nick):
-    return ''.join(["BAN:", your_nick, ":", ban_nick, "\r\n"])
+    return ''.join(["BAN:", your_nick, "@", ban_nick, "\r\n"])
 
 
 # CREATE:yournick:room_name - create room with name room_name
@@ -301,10 +301,12 @@ class UserWindow():
                     if data[0] == '2':
                         if data[2] == '6':
                             self.update_list(data)
-                        elif data[2] == '4':
+                        elif data[2] == '4' or data[2] == '5':
                             self.update_local_room_list()
-                        elif data[2] == '5':
-                            self.update_local_room_list()
+                        elif data[2] == '9':
+                            self.button.destroy()
+                        elif data[1] == '1' and data[2]=='8':
+                            self.button.destroy()
             except ssl.SSLError as err:
                 print " %s %s " + str(err)
 
