@@ -4,6 +4,7 @@ import hashlib, threading
 from encodings import utf_8
 from re import U
 import sys
+from time import sleep
 
 reload(sys)  # Reload does the trick!
 sys.setdefaultencoding('UTF8')
@@ -106,6 +107,7 @@ def command_global(your_nick, message):
 # PERM:yournick@nick - rise permissions of user nick to 1 level
 def command_perm(your_nick, up_nick):
     return ''.join(["PERM:", your_nick, "@", up_nick, '\r\n'])
+
 
 try:
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -240,10 +242,10 @@ def insert_message(window, input_command):
             secure_sock.send(result)
             w.commantLine.delete(0, 'end')
     elif input_command != '':
-            window.write("Message %s \n" % (input_command))
-            result = ''.join(command_message(nick, input_command))
-            secure_sock.send(result)
-            w.commantLine.delete(0, 'end')
+        window.write("Message %s \n" % (input_command))
+        result = ''.join(command_message(nick, input_command))
+        secure_sock.send(result)
+        w.commantLine.delete(0, 'end')
 
 
 class UserWindow():
@@ -302,12 +304,23 @@ class UserWindow():
         scrollbar.config(command=self.text.yview)
 
         scrollbar.pack()
+
+        self.root.protocol("WM_DELETE_WINDOW", self.on_exit)
         # self.root.protocol('WM_DELETE_WINDOW', self.disconnect())  # root is your root window
         self.root.mainloop()
 
+    def on_exit(self):
+        print 'anus'
+        insert_message(self, "/quit")
+        self.exit = 0
+        sleep(0.1)
+        self.root.destroy()
+        secure_sock.close()
+        sock.close()
+
     def loop(self):
-        exit = 1
-        while exit:
+        self.exit = 1
+        while self.exit:
             try:
                 data = secure_sock.recv(1024)
                 if data:
@@ -323,17 +336,18 @@ class UserWindow():
                             self.button.destroy()
                             secure_sock.close()
                             sock.close()
-                            exit = 0
+                            self.exit = 0
                         elif data[1] == '1':
                             if data[2] == '8' and data[2] == '0':
                                 self.button.destroy()
                                 secure_sock.close()
                                 sock.close()
-                                exit = 0
+                                self.exit = 0
             except ssl.SSLError as err:
                 print " %s %s " + str(err)
                 self.write(str(err))
                 self.button.destroy()
+        print 'wychodze'
 
     def update_list(self, data):
         self.listbox.delete(0, 'end')
