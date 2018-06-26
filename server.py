@@ -45,7 +45,7 @@ def check_head(data,sock):
         elif head[0] == "JOIN":
                 return join_room(rest,sock)
         elif head[0] == "KICK":
-                return kick(rest,sock)
+                return kick(rest)
         elif head[0] == "USERS":
                 return get_all_users()
         elif head[0] == "PRIV":
