@@ -98,6 +98,11 @@ def command_priv(priv_nick, message):
     return ''.join(["PRIV:", nick, "@", priv_nick, "@", message, "\r\n"])
 
 
+# GLOBAL:yournick@message - send message to all users, require at least 1 level permission
+def command_global(your_nick, message):
+    return ''.join(["GLOBAL:", your_nick, "@", message, '\r\n'])
+
+
 try:
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((HOST, PORT))
@@ -195,6 +200,8 @@ def insert_message(window, input_command):
                 result = ''.join(command_delete(nick, command[1]))
             elif command[0] == '/create':
                 result = ''.join(command_create(nick, command[1]))
+            elif command[0] == '/global':
+                result = ''.join(command_global(nick, command[1]))
             elif command[0] == '/login':
                 command = input_command.split(" ")
                 nick = command[1]
