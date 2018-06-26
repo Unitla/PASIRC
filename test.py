@@ -103,6 +103,10 @@ def command_global(your_nick, message):
     return ''.join(["GLOBAL:", your_nick, "@", message, '\r\n'])
 
 
+# PERM:yournick@nick - rise permissions of user nick to 1 level
+def command_perm(your_nick, up_nick):
+    return ''.join(["PERM:", your_nick, "@", up_nick, '\r\n'])
+
 try:
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((HOST, PORT))
@@ -202,6 +206,8 @@ def insert_message(window, input_command):
                 result = ''.join(command_create(nick, command[1]))
             elif command[0] == '/global':
                 result = ''.join(command_global(nick, command[1]))
+            elif command[0] == '/perm':
+                result = ''.join(command_perm(nick, command[1]))
             elif command[0] == '/login':
                 command = input_command.split(" ")
                 nick = command[1]
