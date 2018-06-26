@@ -179,7 +179,7 @@ def insert_message(window, input_command):
     global nick
     window.text.config(state='normal')
     # if input sterts with / is recognised as command
-    if (input_command[0] == '/'):
+    if input_command != '' and input_command[0] == '/':
         # take command name
         if " " in input_command:
             command = input_command.split(" ", 1)
@@ -225,10 +225,12 @@ def insert_message(window, input_command):
         else:
             window.write("Command %s found \n" % (result))
             secure_sock.send(result)
-    else:
-        window.write("Message %s \n" % (input_command))
-        result = ''.join(command_message(nick, input_command))
-        secure_sock.send(result)
+            w.commantLine.delete(0, 'end')
+    elif input_command != '':
+            window.write("Message %s \n" % (input_command))
+            result = ''.join(command_message(nick, input_command))
+            secure_sock.send(result)
+            w.commantLine.delete(0, 'end')
 
 
 class UserWindow():
@@ -263,15 +265,15 @@ class UserWindow():
         # pack - fit the size of the listLabelindolistLabel to the given text
         messagesLabel.pack()
 
-        commantLine = tk.Entry(self.root)
+        self.commantLine = tk.Entry(self.root)
         # commantLine.grid(row=1, column=1, sticky=tk.W)
-        commantLine.pack()
+        self.commantLine.pack()
         # can listLabelrite after program starts
-        commantLine.focus()
+        self.commantLine.focus()
 
         # lambda is used to pass parameters to function
         self.button = tk.Button(self.root, text="push command", width=25,
-                                command=lambda: insert_message(self, commantLine.get()))
+                                command=lambda: insert_message(self, self.commantLine.get()))
         self.button.pack()
 
         for item in roomlist:
