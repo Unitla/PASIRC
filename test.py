@@ -212,6 +212,7 @@ def insert_message(window, input_command):
             elif command[0] == '/list':
                 result = ''.join(command_list())
             elif command[0] == '/quit':
+                window.button.destroy()
                 result = ''.join(command_quit())
             elif command[0] == '/users':
                 result = ''.join(command_users())
@@ -269,9 +270,9 @@ class UserWindow():
         commantLine.focus()
 
         # lambda is used to pass parameters to function
-        button = tk.Button(self.root, text="push command", width=25,
+        self.button = tk.Button(self.root, text="push command", width=25,
                            command=lambda: insert_message(self, commantLine.get()))
-        button.pack()
+        self.button.pack()
 
         for item in roomlist:
             self.listbox.insert(tk.END, item)
@@ -286,7 +287,7 @@ class UserWindow():
         scrollbar.config(command=self.text.yview)
 
         scrollbar.pack()
-        # self.root.protocol('WM_DELETE_WINDOW', self.disconnect())  # root is your root window
+        #self.root.protocol('WM_DELETE_WINDOW', self.disconnect())  # root is your root window
         self.root.mainloop()
 
     def loop(self):
