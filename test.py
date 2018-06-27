@@ -1,4 +1,5 @@
 import Tkinter as tk
+import os
 import socket, ssl
 import hashlib, threading
 from encodings import utf_8
@@ -307,23 +308,26 @@ class UserWindow():
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_exit)
         # self.root.protocol('WM_DELETE_WINDOW', self.disconnect())  # root is your root window
+        self.is_disconnect = False
         self.root.mainloop()
 
     def on_exit(self):
-        print 'anus'
-        insert_message(self, "/quit")
+        if not self.is_disconnect:
+            insert_message(self, "/quit")
         self.exit = 0
         sleep(0.1)
         self.root.destroy()
         secure_sock.close()
         sock.close()
+        os._exit(0)
+        print threading.enumerate()
 
     def loop(self):
         self.exit = 1
         while self.exit:
             try:
                 data = secure_sock.recv(1024)
-                if data:
+                if data != None and ':' not in data:
                     print data
                     self.write(data)
                     print data[0], data[2]
@@ -333,16 +337,24 @@ class UserWindow():
                         elif data[2] == '4' or data[2] == '5':
                             self.update_local_room_list()
                         elif data[2] == '9':
+                            self.is_disconnect = True
+                            insert_message(self, "/quit")
                             self.button.destroy()
                             secure_sock.close()
                             sock.close()
                             self.exit = 0
                         elif data[1] == '1':
-                            if data[2] == '8' and data[2] == '0':
+                            if data[2] == '8':
+                                self.is_disconnect = True
+                                insert_message(self, "/quit")
                                 self.button.destroy()
                                 secure_sock.close()
                                 sock.close()
                                 self.exit = 0
+                            elif data[2] == '0':
+                                self.exit = 0
+                                self.button.destroy()
+
             except ssl.SSLError as err:
                 print " %s %s " + str(err)
                 self.write(str(err))
