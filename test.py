@@ -320,13 +320,12 @@ class UserWindow():
         secure_sock.close()
         sock.close()
         os._exit(0)
-        print threading.enumerate()
 
     def loop(self):
         self.exit = 1
         while self.exit:
             try:
-                data = secure_sock.recv(1024)
+                data = recv_all(secure_sock, '\r\n')
                 if data != None and ':' not in data:
                     print data
                     self.write(data)
@@ -354,7 +353,8 @@ class UserWindow():
                             elif data[2] == '0':
                                 self.exit = 0
                                 self.button.destroy()
-
+                elif data != None:
+                    self.write(data)
             except ssl.SSLError as err:
                 print " %s %s " + str(err)
                 self.write(str(err))
