@@ -7,7 +7,7 @@ reload(sys)  # Reload does the trick!
 sys.setdefaultencoding('UTF8')
 
 KEYFILE = 'key.pem'
-CERTFILE = 'cacert.pem'
+CERTFILE = 'certv6.pem'
 head_split = ":"
 login_split = "@"
 message_split = "@"
@@ -277,12 +277,6 @@ class Server:
     def __init__(self, ip, port):
         self.ip = ip
         self.port = port
-        if ":" in ip:
-            print "ipv6"
-            self.version=6
-        if '.' in ip:
-            print "ipv4"
-            self.version=4
         self.address = (self.ip, self.port)
         self.server = None
 
@@ -290,10 +284,7 @@ class Server:
     def run(self):
         try:
 
-            if self.version == 6:
-                self.server = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-            if self.version == 4:
-                self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.server = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
             self.server.bind(self.address)
             self.server.listen(5)
             self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -302,8 +293,8 @@ class Server:
 
             while True:
 
-                #connection, (ip, port) = self.server.accept()
-                connection, (ip, port) = ssl_sock.accept()
+                #connection, (ip, port,a,b) = self.server.accept()
+                connection, (ip, port,a,b) = ssl_sock.accept()
                 client = (ip, port);
                 print client
 
@@ -324,61 +315,6 @@ class Server:
 
 if __name__ == '__main__':
 
-    s = Server('nefro.tk', 6666)
+    s = Server('::1', 6666)
 
     s.run()
-
-class ServerThread(threading.Thread):
-    def __init__(self, ip, port):
-        self.ip = ip
-        self.port = port
-        if ":" in ip:
-            print "ipv6"
-            self.version=6
-        if '.' in ip:
-            print "ipv4"
-            self.version=4
-        self.address = (self.ip, self.port)
-        self.server = None
-
-    def run(self):
-        try:
-            if self.version == 6:
-                self.server = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-            if self.version == 4:
-                self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.server.bind(self.address)
-            self.server.listen(5)
-            self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-            ssl_sock = ssl.wrap_socket(self.server, keyfile=KEYFILE, certfile=CERTFILE, server_side=True, ssl_version=ssl.PROTOCOL_TLSv1_2)
-
-            while True:
-                #connection, (ip, port) = self.server.accept()
-                print ssl_sock.accept()
-                if self.version==6:
-                    connection, (ip, port,a,b) = ssl_sock.accept()
-                if self.version==4:
-                    connection, (ip, port) = ssl_sock.accept()
-                client = (ip, port)
-                print client
-
-                #clients.append(client)
-                #print connection
-                #clients.append(connection)
-                clients[connection] = ""
-                c = ClientThread(connection)
-                c.start()
-
-        except socket.error, e:
-            if self.server:
-                self.server.close()
-            print e
-            sys.exit(1)
-
-
-if __name__ == '__main__':
-    s_v6 = Server("::1",8888)
-    s_v6.run()
-    s_v4 = Server("127.0.0.1", 6666)
-    s_v4.run()
