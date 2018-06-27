@@ -1,8 +1,11 @@
 import Tkinter as tk
 import socket, ssl
 import hashlib, threading
+from encodings import utf_8
 from re import U
 import sys
+from time import sleep
+
 reload(sys)  # Reload does the trick!
 sys.setdefaultencoding('UTF8')
 
@@ -15,15 +18,6 @@ PORT = 6666
 
 current_room = 'default'
 
-def toHex(s):
-    lst = []
-    for ch in s:
-        hv = hex(ord(ch)).replace('0x', '')
-        if len(hv) == 1:
-            hv = '0'+hv
-        lst.append(hv)
-
-    return reduce(lambda x,y:x+y, lst)
 
 def recv_all(sock, crlf):
     data = ""
@@ -33,13 +27,13 @@ def recv_all(sock, crlf):
 
     # Functions command returns command string in expected format
 
+
 # LOGIN:nick@haslo - login/register user with name nick
 def command_login(login, password):
     if login != 'root':
         password = hashlib.md5(password).hexdigest()
-        data=''.join(["LOGIN:", login, "@", password, "\r\n"])
-        print toHex(data)
     return ''.join(["LOGIN:", login, "@", password, "\r\n"])
+
 
 # JOIN:room_name - join room
 def command_join(your_nick, room_name):
@@ -48,18 +42,22 @@ def command_join(your_nick, room_name):
     current_room = room_name
     return ''.join(["JOIN:", your_nick, "@", room_name, "\r\n"])
 
+
 # KICK:yournick:nick - disconnect user with name nick
 def command_kick(your_nick, kick_nick):
     return ''.join(["KICK:", your_nick, "@", kick_nick, "\r\n"])
 
+
 # BAN:yournick:nick - disconnect and pernamently ban usr with name nick
 def command_ban(your_nick, ban_nick):
-    return ''.join(["BAN:", your_nick, ":", ban_nick, "\r\n"])
+    return ''.join(["BAN:", your_nick, "@", ban_nick, "\r\n"])
+
 
 # CREATE:yournick:room_name - create room with name room_name
 def command_create(your_nick, new_room_name):
     roomlist.append(new_room_name)
     return ''.join(["CREATE:", your_nick, "@", new_room_name, "\r\n"])
+
 
 # DELETE:yournick:room_name - delete room with name room_name
 def command_delete(your_nick, room_to_delete):
@@ -68,31 +66,47 @@ def command_delete(your_nick, room_to_delete):
         roomlist.pop(index)
     return ''.join(["DELETE:", your_nick, "@", room_to_delete, "\r\n"])
 
+
 # ME:yournick - get info about yourself
 def command_me(your_nick):
     return ''.join(["ME:", your_nick, "\r\n"])
+
 
 # LIST - get rooms list
 def command_list():
     return ''.join(["LIST:", "\r\n"])
 
+
 # MSG:yournick@message - send message in courent room
 def command_message(your_nick, message):
     return ''.join(["MSG:", your_nick, "@", current_room, "@", message, '\r\n'])
+
 
 # USERS: - get all users
 def command_users():
     return ''.join(["USERS:", "\r\n"])
 
-#QUIT: - quit chat
+
+# QUIT: - quit chat
 def command_quit():
     global nick
     return ''.join(["QUIT:", nick, "\r\n"])
 
-#PRIV:yournick@nick@message - send private message to user nick
-def command_priv(priv_nick,message):
+
+# PRIV:yournick@nick@message - send private message to user nick
+def command_priv(priv_nick, message):
     global nick
-    return ''.join(["PRIV:", nick,"@",priv_nick,"@",message,"\r\n"])
+    return ''.join(["PRIV:", nick, "@", priv_nick, "@", message, "\r\n"])
+
+
+# GLOBAL:yournick@message - send message to all users, require at least 1 level permission
+def command_global(your_nick, message):
+    return ''.join(["GLOBAL:", your_nick, "@", message, '\r\n'])
+
+
+# PERM:yournick@nick - rise permissions of user nick to 1 level
+def command_perm(your_nick, up_nick):
+    return ''.join(["PERM:", your_nick, "@", up_nick, '\r\n'])
 
 
 try:
@@ -111,8 +125,9 @@ try:
         raise Exception("Error")
 except Exception as err:
     mGuiClose = tk.Tk()
+    mGuiClose.eval('tk::PlaceWindow %s center' % mGuiClose.winfo_pathname(mGuiClose.winfo_id()))
     mGuiClose.title("Error")
-    mlabel = tk.Label(text="Socket connection could not be made error message "+str(err))
+    mlabel = tk.Label(text="Socket connection could not be made, error code " + str(err.args[0]))
     mlabel.pack()
     mGuiClose.mainloop()
     quit(1)
@@ -121,6 +136,7 @@ except Exception as err:
 # print recv_all(secure_sock, "\r\n")
 
 mGui = tk.Tk()
+mGui.eval('tk::PlaceWindow %s center' % mGui.winfo_pathname(mGui.winfo_id()))
 mGui.title("Log-In")
 
 mlabel = tk.Label(text="Login").grid(row=0, column=0, sticky=tk.W)
@@ -174,7 +190,7 @@ def insert_message(window, input_command):
     global nick
     window.text.config(state='normal')
     # if input sterts with / is recognised as command
-    if (input_command[0] == '/'):
+    if input_command != '' and input_command[0] == '/':
         # take command name
         if " " in input_command:
             command = input_command.split(" ", 1)
@@ -190,6 +206,10 @@ def insert_message(window, input_command):
                 result = ''.join(command_delete(nick, command[1]))
             elif command[0] == '/create':
                 result = ''.join(command_create(nick, command[1]))
+            elif command[0] == '/global':
+                result = ''.join(command_global(nick, command[1]))
+            elif command[0] == '/perm':
+                result = ''.join(command_perm(nick, command[1]))
             elif command[0] == '/login':
                 command = input_command.split(" ")
                 nick = command[1]
@@ -207,6 +227,7 @@ def insert_message(window, input_command):
             elif command[0] == '/list':
                 result = ''.join(command_list())
             elif command[0] == '/quit':
+                window.button.destroy()
                 result = ''.join(command_quit())
             elif command[0] == '/users':
                 result = ''.join(command_users())
@@ -219,9 +240,12 @@ def insert_message(window, input_command):
         else:
             window.write("Command %s found \n" % (result))
             secure_sock.send(result)
-    else:
+            w.commantLine.delete(0, 'end')
+    elif input_command != '':
         window.write("Message %s \n" % (input_command))
-        secure_sock.send(input_command)
+        result = ''.join(command_message(nick, input_command))
+        secure_sock.send(result)
+        w.commantLine.delete(0, 'end')
 
 
 class UserWindow():
@@ -233,6 +257,9 @@ class UserWindow():
 
     def window(self):
         self.root = tk.Tk()
+        x = (self.root.winfo_screenwidth() - self.root.winfo_reqwidth()) / 2 - 250
+        y = (self.root.winfo_screenheight() - self.root.winfo_reqheight()) / 2 - 250
+        self.root.geometry("+%d+%d" % (x, y))
         self.root.title("mIrc Chat")
 
         # first parametr - parent listLabelindolistLabel
@@ -253,16 +280,16 @@ class UserWindow():
         # pack - fit the size of the listLabelindolistLabel to the given text
         messagesLabel.pack()
 
-        commantLine = tk.Entry(self.root)
+        self.commantLine = tk.Entry(self.root)
         # commantLine.grid(row=1, column=1, sticky=tk.W)
-        commantLine.pack()
+        self.commantLine.pack()
         # can listLabelrite after program starts
-        commantLine.focus()
+        self.commantLine.focus()
 
         # lambda is used to pass parameters to function
-        button = tk.Button(self.root, text="push command", width=25,
-                           command=lambda: insert_message(self, commantLine.get()))
-        button.pack()
+        self.button = tk.Button(self.root, text="push command", width=25,
+                                command=lambda: insert_message(self, self.commantLine.get()))
+        self.button.pack()
 
         for item in roomlist:
             self.listbox.insert(tk.END, item)
@@ -277,11 +304,23 @@ class UserWindow():
         scrollbar.config(command=self.text.yview)
 
         scrollbar.pack()
-        #self.root.protocol('WM_DELETE_WINDOW', self.disconnect())  # root is your root window
+
+        self.root.protocol("WM_DELETE_WINDOW", self.on_exit)
+        # self.root.protocol('WM_DELETE_WINDOW', self.disconnect())  # root is your root window
         self.root.mainloop()
 
+    def on_exit(self):
+        print 'anus'
+        insert_message(self, "/quit")
+        self.exit = 0
+        sleep(0.1)
+        self.root.destroy()
+        secure_sock.close()
+        sock.close()
+
     def loop(self):
-        while 1:
+        self.exit = 1
+        while self.exit:
             try:
                 data = secure_sock.recv(1024)
                 if data:
@@ -291,12 +330,24 @@ class UserWindow():
                     if data[0] == '2':
                         if data[2] == '6':
                             self.update_list(data)
-                        elif data[2] == '4':
+                        elif data[2] == '4' or data[2] == '5':
                             self.update_local_room_list()
-                        elif data[2] == '5':
-                            self.update_local_room_list()
+                        elif data[2] == '9':
+                            self.button.destroy()
+                            secure_sock.close()
+                            sock.close()
+                            self.exit = 0
+                        elif data[1] == '1':
+                            if data[2] == '8' and data[2] == '0':
+                                self.button.destroy()
+                                secure_sock.close()
+                                sock.close()
+                                self.exit = 0
             except ssl.SSLError as err:
                 print " %s %s " + str(err)
+                self.write(str(err))
+                self.button.destroy()
+        print 'wychodze'
 
     def update_list(self, data):
         self.listbox.delete(0, 'end')
